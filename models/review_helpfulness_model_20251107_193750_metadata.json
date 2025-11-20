@@ -1,0 +1,29 @@
+{
+  "feature_columns": [
+    "char_count",
+    "word_count",
+    "avg_word_length",
+    "sentence_count",
+    "words_per_sentence",
+    "exclamation_count",
+    "question_count",
+    "uppercase_word_count",
+    "lexical_diversity",
+    "vader_neg",
+    "vader_neu",
+    "vader_pos",
+    "vader_compound",
+    "textblob_polarity",
+    "textblob_subjectivity",
+    "digit_ratio",
+    "review_score"
+  ],
+  "metrics": {
+    "accuracy": 0.738894277400582,
+    "precision": 0.7776966155344534,
+    "recall": 0.8806175902950096,
+    "f1_score": 0.8259632790276701,
+    "roc_auc": 0.7284723395072153
+  },
+  "timestamp": "20251107_193750"
+}
