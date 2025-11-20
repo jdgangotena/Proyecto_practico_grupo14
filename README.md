@@ -6,6 +6,7 @@ Sistema de Machine Learning y NLP para predecir la utilidad de reseñas de produ
 
 Este proyecto construye un **Asistente de Reseñas** que predice si una reseña será considerada útil por otros usuarios, basándose en características extraídas del texto mediante técnicas de NLP (Procesamiento de Lenguaje Natural).
 
+
 ### Componentes Principales
 
 1. **Pipeline de Datos**: Carga, limpieza y preprocesamiento de reseñas de Amazon
@@ -19,6 +20,7 @@ Este proyecto construye un **Asistente de Reseñas** que predice si una reseña 
 Predecir la "puntuación de utilidad" de una reseña calculando características de calidad del texto y entrenando un modelo que aprenda la relación entre estas características y la utilidad percibida por usuarios.
 
 ## 🗂️ Estructura del Proyecto por carpetas
+## pz
 
 ```
 opiniones_ecommners-1/
