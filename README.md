@@ -18,7 +18,7 @@ Este proyecto construye un **Asistente de Reseñas** que predice si una reseña 
 
 Predecir la "puntuación de utilidad" de una reseña calculando características de calidad del texto y entrenando un modelo que aprenda la relación entre estas características y la utilidad percibida por usuarios.
 
-## 🗂️ Estructura del Proyecto
+## 🗂️ Estructura del Proyecto por carpetas
 
 ```
 opiniones_ecommners-1/
