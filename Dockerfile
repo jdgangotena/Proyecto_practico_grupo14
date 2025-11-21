@@ -72,12 +72,13 @@ COPY --chown=apiuser:apiuser models/ models/
 # Cambiar a usuario no-root
 USER apiuser
 
-# Exponer puerto
+# Exponer puerto (Railway/Coolify lo asignan dinámicamente)
 EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+    CMD python -c "import requests; import os; requests.get(f'http://localhost:{os.getenv(\"PORT\", \"8000\")}/health')" || exit 1
 
 # Comando para ejecutar la aplicación
-CMD ["uvicorn", "api_app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Railway/Coolify usan la variable PORT
+CMD uvicorn api_app:app --host 0.0.0.0 --port ${PORT:-8000}

@@ -473,31 +473,150 @@ docker inspect review-api | grep -A 10 Health
 
 ---
 
-## 🌍 Deploy en Producción
+## 🌍 Deploy en Coolify
 
-### Servicios Cloud Recomendados
+### Pre-requisitos
 
-#### AWS ECS/Fargate
+- Servidor VPS (DigitalOcean, AWS, Hetzner, etc.)
+- Coolify instalado en tu servidor
+- Repositorio Git (GitHub, GitLab, Bitbucket, etc.)
+
+### Instalación de Coolify
+
+Si aún no tienes Coolify instalado en tu servidor:
+
 ```bash
-docker build -t review-api:latest .
-docker tag review-api:latest <account>.dkr.ecr.<region>.amazonaws.com/review-api:latest
-docker push <account>.dkr.ecr.<region>.amazonaws.com/review-api:latest
+# Conectar a tu servidor via SSH
+ssh user@tu-servidor.com
+
+# Instalar Coolify (requiere Ubuntu 20.04+ o Debian 11+)
+curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash
 ```
 
-#### Google Cloud Run
+Accede al panel de Coolify en: `http://tu-servidor.com:8000`
+
+### Deploy Paso a Paso
+
+#### 1. Preparar el Repositorio
+
 ```bash
-gcloud builds submit --tag gcr.io/<project-id>/review-api
-gcloud run deploy review-api --image gcr.io/<project-id>/review-api --platform managed
+# Asegúrate de tener todos los cambios commiteados
+git add .
+git commit -m "Deploy to Coolify"
+git push origin main
 ```
 
-#### Heroku
-```bash
-heroku container:push web -a your-app-name
-heroku container:release web -a your-app-name
+#### 2. Crear Aplicación en Coolify
+
+1. **Login en Coolify** (http://tu-servidor.com:8000)
+2. **Crear nuevo proyecto**:
+   - Click en "New Project"
+   - Nombre: `review-api`
+3. **Conectar repositorio Git**:
+   - Click en "Add Source"
+   - Selecciona tu proveedor Git (GitHub, GitLab, etc.)
+   - Autoriza la conexión
+   - Selecciona el repositorio
+
+#### 3. Configurar Aplicación
+
+Coolify detectará automáticamente el `Dockerfile` y configurará:
+
+- ✅ Build con Dockerfile
+- ✅ Puerto: 8000 (automático desde EXPOSE)
+- ✅ Health check: `/health`
+
+**Configuración opcional**:
+- **Dominio personalizado**: Agregar tu dominio
+- **Variables de entorno**: Ver `.env.example`
+- **Puerto personalizado**: Si necesitas cambiar el puerto
+
+#### 4. Variables de Entorno (Opcional)
+
+En el panel de Coolify, agregar si es necesario:
+
+```env
+PORT=8000
+API_CORS_ORIGINS=https://tu-dominio.com
+LOG_LEVEL=INFO
 ```
 
-#### DigitalOcean App Platform
-Conecta tu repositorio GitHub y usa `docker-compose.yml` directamente.
+#### 5. Deploy
+
+Click en **"Deploy"** y Coolify automáticamente:
+
+1. Clonará el repositorio
+2. Construirá la imagen Docker
+3. Iniciará el contenedor
+4. Configurará SSL con Let's Encrypt (si tienes dominio)
+5. Expondrá la aplicación
+
+### Características de Coolify
+
+- ✅ **Self-hosted**: Tu propio servidor, control total
+- ✅ **Gratis y Open Source**: Sin costos de plataforma
+- ✅ **SSL Automático**: Let's Encrypt incluido
+- ✅ **Deploy Automático**: Webhook desde Git
+- ✅ **Docker Nativo**: Usa tu Dockerfile
+- ✅ **Logs en Tiempo Real**: Debugging fácil
+- ✅ **Health Checks**: Monitoreo automático
+- ✅ **Auto-restart**: Recuperación automática
+
+### Configurar Deploy Automático
+
+Coolify puede hacer deploy automático cuando haces push:
+
+1. En el dashboard de Coolify → **Webhooks**
+2. Copiar la URL del webhook
+3. En tu repositorio GitHub:
+   - Settings → Webhooks → Add webhook
+   - Pegar la URL de Coolify
+   - Seleccionar eventos: Push events
+4. ¡Listo! Cada push desplegará automáticamente
+
+### Verificar el Deploy
+
+```bash
+# Reemplaza con tu dominio o IP
+export API_URL="https://tu-dominio.com"
+
+# Health check
+curl $API_URL/health
+
+# Documentación
+open $API_URL/docs
+
+# Hacer predicción
+curl -X POST $API_URL/reviews/predict_helpfulness \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Amazing product! Highly recommend.",
+    "score": 5
+  }'
+```
+
+### Logs y Debugging
+
+En el dashboard de Coolify:
+- **Logs**: Ver logs en tiempo real
+- **Build Logs**: Revisar el proceso de build
+- **Restart**: Reiniciar la aplicación
+- **Rebuild**: Reconstruir desde cero
+
+### Actualizar el Modelo
+
+```bash
+# 1. Entrenar nuevo modelo localmente
+python scripts/model_training.py
+
+# 2. Commitear y push
+git add models/
+git commit -m "Update model"
+git push origin main
+
+# 3. Coolify redesplegará automáticamente (si webhook configurado)
+# O hacer rebuild manual desde el dashboard
+```
 
 ### Mejores Prácticas para Producción
 
