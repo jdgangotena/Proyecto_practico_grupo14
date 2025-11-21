@@ -1,0 +1,98 @@
+# ================================================================
+# .dockerignore - Excluir archivos innecesarios del build
+# ================================================================
+
+# Entorno virtual
+venv/
+env/
+ENV/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Datos (muy pesados, mejor montar como volumen si se necesitan)
+data/
+*.csv
+*.parquet
+*.feather
+
+# Plots y visualizaciones
+plots/
+*.html
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+DOCUMENTACION_TECNICA.md
+INSTRUCCIONES.md
+QUICKSTART.md
+RESUMEN_MEJORAS.md
+
+# Testing
+tests/
+test_*.py
+*_test.py
+pytest.ini
+.pytest_cache/
+.coverage
+htmlcov/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Scripts auxiliares (no necesarios en producción)
+check_setup.py
+run_pipeline.py
+examples.py
+dashboard.py
+dashboard_dash_backup.py
+scripts_orde/
+
+# Logs
+*.log
+logs/
+
+# Temporal
+tmp/
+temp/
+*.tmp
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Modelos antiguos (solo mantener latest)
+models/*_202*.pkl
+models/*_202*.json
+!models/review_helpfulness_model_latest.pkl
+!models/review_helpfulness_model_latest_metadata.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
