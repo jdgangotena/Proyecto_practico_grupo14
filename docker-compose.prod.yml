@@ -1,0 +1,76 @@
+version: '3.8'
+
+# ================================================================
+# Docker Compose - Production Setup with Nginx
+# ================================================================
+# Para usar: docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  # ================================================================
+  # API - Review Helpfulness Prediction
+  # ================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: review-api-prod
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+      - APP_ENVIRONMENT=production
+    volumes:
+      # Modelos como volumen (actualización sin rebuild)
+      - ./models:/app/models:ro
+    restart: always
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - api-network
+    # No exponemos el puerto directamente, solo a través de nginx
+    expose:
+      - "8000"
+
+  # ================================================================
+  # Nginx - Reverse Proxy
+  # ================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: review-api-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Configuración de Nginx
+      - ./nginx.conf.example:/etc/nginx/nginx.conf:ro
+      # SSL Certificates (crear directorio ssl/ con tus certificados)
+      # - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - api-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  api-network:
+    driver: bridge
+
+# ================================================================
+# Volumes (opcional - para datos persistentes)
+# ================================================================
+# volumes:
+#   model-data:
+#   nginx-logs:
