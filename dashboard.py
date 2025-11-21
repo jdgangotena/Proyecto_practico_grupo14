@@ -17,7 +17,7 @@ st.set_page_config(
 )
 
 # Configuración
-API_URL = "http://localhost:8000"
+API_URL = "http://m4gk0ko4sccg8gsokco04so0.31.97.10.143.sslip.io"
 
 # Función para verificar la API
 def check_api():
