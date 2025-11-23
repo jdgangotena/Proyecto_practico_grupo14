@@ -176,8 +176,15 @@ class NLPFeatureExtractor:
         """Extrae todas las características NLP del texto."""
         features = {}
 
+        # Longitud y estructura
         features.update(self.extraer_longitud_texto(text))
         features.update(self.extraer_caracteristicas_lexicas(text))
+
+        # Análisis de sentimiento
+        features.update(self.extraer_sentimiento_vader(text))
+        features.update(self.extraer_sentimiento_textblob(text))
+
+        # Características adicionales
         features.update(self.extraer_caracteristicas_adicionales(text, score))
         features.update(self.extraer_especificidad_alimentos(text))
         features.update(self.extraer_comparaciones(text))

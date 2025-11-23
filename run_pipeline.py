@@ -11,7 +11,11 @@ from datetime import datetime
 # Añadir el directorio scripts al path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS_DIR = os.path.join(SCRIPT_DIR, "scripts")
-sys.path.append(SCRIPTS_DIR)
+
+# Agregar scripts/ al PYTHONPATH
+if SCRIPTS_DIR not in sys.path:
+    sys.path.append(SCRIPTS_DIR)
+
 
 
 def print_section(title):
@@ -27,7 +31,8 @@ def print_step(step_num, total_steps, description):
     print("-" * 70)
 
 
-def run_pipeline(nrows=50000, skip_training=False):
+def run_pipeline(nrows=None, skip_training=False):
+
     """
     Ejecuta el pipeline completo.
 
@@ -45,7 +50,7 @@ def run_pipeline(nrows=50000, skip_training=False):
         # ===== PASO 1: CARGAR DATOS =====
         print_step(1, 4, "CARGANDO DATOS")
 
-        from data_loader import cargar_datos, DATA_PATH
+        from scripts.data_loader import cargar_datos, DATA_PATH
 
         if not os.path.exists(DATA_PATH):
             print(f"❌ ERROR: Dataset no encontrado en {DATA_PATH}")
@@ -65,7 +70,7 @@ def run_pipeline(nrows=50000, skip_training=False):
         # ===== PASO 2: LIMPIEZA Y PREPROCESAMIENTO =====
         print_step(2, 4, "LIMPIEZA Y PREPROCESAMIENTO")
 
-        from limpieza import (
+        from scripts.limpieza import (
             calcular_tasa_utilidad,
             limpiar_texto_basico,
             preparar_dataset
@@ -90,7 +95,7 @@ def run_pipeline(nrows=50000, skip_training=False):
         # ===== PASO 3: EXTRACCIÓN DE CARACTERÍSTICAS NLP =====
         print_step(3, 4, "EXTRAYENDO CARACTERÍSTICAS NLP")
 
-        from nlp_features import procesar_dataset, obtener_estadisticas_features
+        from scripts.nlp_features import procesar_dataset, obtener_estadisticas_features
 
         # Extraer características
         df_con_features = procesar_dataset(df_prepared, text_column='CleanText', score_column='Score')
@@ -108,7 +113,7 @@ def run_pipeline(nrows=50000, skip_training=False):
         if not skip_training:
             print_step(4, 4, "ENTRENANDO MODELO")
 
-            from model_training import ReviewHelpfulnessModel, crear_graficos_evaluacion
+            from scripts.model_training import ReviewHelpfulnessModel, crear_graficos_evaluacion
 
             # Crear instancia del modelo
             model = ReviewHelpfulnessModel()
@@ -190,7 +195,7 @@ def main():
     parser.add_argument(
         '--nrows',
         type=int,
-        default=50000,
+        default=0,
         help='Número de filas a procesar (default: 50000, use 0 para todo el dataset)'
     )
     parser.add_argument(

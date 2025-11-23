@@ -183,20 +183,35 @@ def generar_sugerencias(features: Dict[str, float], probability: float) -> List[
 
 def clasificar_confianza(probability: float) -> str:
     """
-    Clasifica el nivel de confianza de la predicción.
+    Clasifica el nivel de confianza basado en qué tan lejos está la probabilidad
+    del punto de decisión (0.5), usando una escala más granular:
 
-    Args:
-        probability: Probabilidad predicha
-
-    Returns:
-        Nivel de confianza: 'high', 'medium', 'low'
+    Niveles:
+    - very_high:    distancia >= 0.35  (>= 85% o <= 15%)
+    - high:         distancia >= 0.25
+    - medium_high:  distancia >= 0.15
+    - medium:       distancia >= 0.10
+    - medium_low:   distancia >= 0.05
+    - low:          distancia >= 0.02
+    - very_low:     distancia < 0.02
     """
-    if probability >= 0.7 or probability <= 0.3:
-        return "high"
-    elif probability >= 0.55 or probability <= 0.45:
-        return "medium"
+
+    distancia = abs(probability - 0.5)
+
+    if distancia >= 0.35:
+        return "Muy alta"
+    elif distancia >= 0.25:
+        return "Alta"
+    elif distancia >= 0.15:
+        return "Medio alta"
+    elif distancia >= 0.10:
+        return "Media"
+    elif distancia >= 0.05:
+        return "Medio baja"
+    elif distancia >= 0.02:
+        return "Baja"
     else:
-        return "low"
+        return "Muy baja"
 
 
 # Eventos de la aplicación

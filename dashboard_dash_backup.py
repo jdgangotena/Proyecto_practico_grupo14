@@ -76,7 +76,11 @@ app.layout = dbc.Container([
                     dbc.Textarea(
                         id="review-text",
                         placeholder="Escribe tu reseña aquí... Sé específico y detallado sobre tu experiencia con el producto.",
-                        style={"height": "200px"},
+                        style={"height": "200px",
+                                "color": "#ffffff",                # texto normal
+                                "background-color": "#1b2a5a",    # fondo del textarea
+                                "opacity": 1 
+                                },
                         className="mb-3"
                     ),
 

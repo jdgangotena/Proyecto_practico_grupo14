@@ -97,6 +97,8 @@ def limpiar_texto_basico(df):
 
         # Eliminar espacios extra
         text = re.sub(r'\s+', ' ', text).strip()
+        
+        
 
         return text
 
@@ -208,7 +210,7 @@ if __name__ == "__main__":
     print("="*60)
 
     # 1. Cargar datos
-    df = cargar_datos(DATA_PATH, nrows=50000)  # Cargar subset para pruebas
+    df = cargar_datos(DATA_PATH, nrows=None)  # Cargar subset para pruebas
 
     if df is None:
         print("Error al cargar datos. Abortando.")

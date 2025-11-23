@@ -8,6 +8,163 @@ import requests
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
+import os
+
+# ============================
+# ESTILOS CSS MODERNOS
+# ============================
+st.markdown(
+    """
+    <style>
+    /* Fondo general y color de texto */
+    .stApp {
+        background-color: #0a1f44;  /* azul oscuro */
+        color: #ffffff;
+    }
+
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #142850;
+        color: #ffffff;
+    }
+
+    /* Header principal */
+    .css-18e3th9 h1 {
+        color: #f0f0f0;
+        font-size: 3rem;
+    }
+
+    /* Subtítulos */
+    h2, h3, h4, h5 {
+        color: #ffffff;
+    }
+
+    /* Tabs */
+    div[data-baseweb="tab-list"] button {
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        background-color: #1b2a5a !important;
+        color: #ffffff !important;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin: 0 4px;
+    }
+
+    div[data-baseweb="tab-list"] button[data-selected="true"] {
+        background-color: #ff6f61 !important; /* color llamativo para la tab activa */
+        color: #ffffff !important;
+    }
+
+    /* Botones */
+    .stButton>button {
+        background-color: #ff6f61;
+        color: #ffffff;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: bold;
+        border: none;
+    }
+
+    .stButton>button:hover {
+        background-color: #ff4b3e;
+        color: #ffffff;
+    }
+
+    /* Inputs y textareas */
+    textarea, input {
+        background-color: #1b2a5a !important;
+        color: #ffffff !important;
+    }
+
+    /* Metricas */
+    .stMetric>div>div>div>div>div {
+        background-color: #1b2a5a;
+        color: #ffffff;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+    }
+
+    /* Pie charts y gráficos Plotly */
+    .plotly-graph-div {
+        background-color: #0a1f44 !important;
+    }
+    
+    /* Métricas - texto y valor en blanco */
+    .stMetric > div > div > div > div > div > div:first-child,
+    .stMetric > div > div > div > div > div > div:last-child {
+        color: #ffffff !important;
+    }
+    
+    /* Métricas - texto y valor en blanco */
+    .stMetric div[data-testid="stMetricLabel"] {
+        color: #ffffff !important;  /* nombre del KPI */
+    }
+
+    .stMetric div[data-testid="stMetricValue"] {
+        color: #ffffff !important;  /* valor del KPI */
+    }
+    
+    /* Nombre de las métricas en blanco */
+    .stMetric > div > div > div > div:first-child {
+        color: #ffffff !important;
+    }
+    
+    /* Texto de métricas (nombre y valor) en blanco */
+    .stMetric * {
+        color: #ffffff !important;
+    }
+    
+    
+    /* Placeholder más visible en text_area */
+    textarea::placeholder {
+        color: #ffffff !important;  /* Gris claro */
+        opacity: 1 !important;       /* fuerza que se muestre */
+    }
+    
+    /* Header principal */
+    .stApp .css-18e3th9 h1, 
+    .stApp h1 {
+        color: #ffffff !important;  /* Blanco puro */
+    }
+    
+    /* Barra superior (Toolbar) */
+.stAppToolbar {
+    background-color: #142850 !important;  /* fondo azul oscuro */
+    color: #142850 !important;             /* texto general blanco */
+}
+
+/* Botones dentro de la Toolbar */
+.stAppToolbar button {
+    background-color: #142850 !important; /* fondo blanco */
+    color: #142850 !important;            /* texto azul */
+    font-weight: bold !important;         /* opcional */
+}
+
+/* Iconos dentro de los botones (svg) */
+.stAppToolbar button svg {
+    color: #ffffff !important; /* iconos blancos */
+}
+
+/* Otros spans dentro de la toolbar (sin afectar botones) */
+.stAppToolbar > div span {
+    color: #ffffff !important;
+    }
+    
+    /* Iconos de ejecución en la Toolbar (nadador, pelotitas, etc.) */
+.stAppToolbar svg {
+    color: #ffffff !important;  /* iconos blancos */
+}
+
+/* Iconos dentro de botones (mantenerlos blancos) */
+.stAppToolbar button svg {
+    color: #ffffff !important; 
+}
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 
 # Configuración de la página
 st.set_page_config(
@@ -18,6 +175,19 @@ st.set_page_config(
 
 # Configuración
 API_URL = "http://localhost:8000"
+DATA_PATH = os.path.join("data", "amazon_reviews_with_features.csv")
+
+# ======================================
+# CARGA DE DATA REAL
+# ======================================
+
+@st.cache_data
+def load_data():
+    if os.path.exists(DATA_PATH):
+        return pd.read_csv(DATA_PATH)
+    return None
+
+df = load_data()
 
 # Función para verificar la API
 def check_api():
@@ -36,171 +206,160 @@ st.title("🔍 Asistente de Análisis de Reseñas")
 st.markdown("**Análisis de utilidad de reseñas usando Machine Learning y NLP**")
 
 # Sidebar con estado del sistema
+# ======================================
+# SIDEBAR
+# ======================================
+
 with st.sidebar:
     st.header("⚙️ Estado del Sistema")
-    
+
     api_connected, api_data = check_api()
-    
+
     if api_connected:
         st.success("✓ API Conectada")
         st.success("✓ Modelo Cargado")
-        if api_data:
-            st.info(f"Características: {api_data.get('features_count', 'N/A')}")
+        st.info(f"Características del modelo: {api_data.get('features_count', 'N/A')}")
     else:
         st.error("❌ API No Disponible")
-        st.warning("Asegúrate de ejecutar: `python api_app.py`")
-    
+        st.warning("Ejecuta: `python api_app.py`")
+
     st.markdown("---")
-    st.markdown("### 📚 Información")
-    st.markdown("""
-    Este asistente usa Machine Learning (LightGBM) 
-    y NLP para predecir la utilidad de reseñas.
-    """)
-    
+    st.markdown("### 📂 Estado del Dataset")
+
+    if df is not None:
+        st.success(f"✓ Dataset cargado: {len(df):,} filas")
+    else:
+        st.error("Dataset no encontrado")
+        st.warning("Ejecuta el pipeline: `python run_pipeline.py`")
+
     st.markdown("---")
-    st.markdown("### 🎯 Características")
-    st.markdown("""
-    - **EDA**: Visualización de datos
-    - **ML**: Predicción de utilidad
-    - **NLP**: Análisis de sentimiento
-    """)
-    
-    st.markdown("---")
-    st.markdown("### 📝 Ejemplos Rápidos")
-    
+    st.markdown("### 📝 Ejemplos")
     if st.button("Reseña Útil", use_container_width=True):
-        st.session_state['example_text'] = "This coffee is excellent! The flavor is rich and smooth, with notes of chocolate and caramel. I've been buying it for months and it always arrives fresh. Much better than other brands I've tried. Great value for the price."
+        st.session_state['example_text'] = "This coffee is excellent! The flavor is rich and smooth..."
         st.session_state['example_score'] = 5
-    
+
     if st.button("Reseña Corta", use_container_width=True):
         st.session_state['example_text'] = "Good"
         st.session_state['example_score'] = 4
 
 # Crear pestañas principales
-tab1, tab2 = st.tabs(["📊 Análisis Exploratorio (EDA)", "🤖 Predicción de Utilidad (ML)"])
+tab1, tab2 = st.tabs([
+    "## 📊 Análisis Exploratorio (EDA)", 
+    "## 🤖 Predicción de Utilidad (ML)"
+    ])
 
-# ==================== PESTAÑA 1: EDA ====================
+# =====================================================================
+# ============================= TAB 1 =================================
+# =====================================================================
+
 with tab1:
     st.header("📈 Análisis Exploratorio de Datos")
     st.markdown("Visualiza patrones y tendencias en las reseñas analizadas")
-    
-    st.markdown("---")
-    
-    # Sección de métricas generales
-    st.subheader("📊 Métricas Generales del Sistema")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric(
-            label="Reseñas Analizadas",
-            value="1,234",
-            delta="156 esta semana"
-        )
-    
-    with col2:
-        st.metric(
-            label="Tasa de Utilidad",
-            value="68.5%",
-            delta="2.3%"
-        )
-    
-    with col3:
-        st.metric(
-            label="Confianza Promedio",
-            value="Alta",
-            delta="Estable"
-        )
-    
-    with col4:
-        st.metric(
-            label="Palabras Promedio",
-            value="47",
-            delta="-3"
-        )
-    
-    st.markdown("---")
-    
-    # Gráficos de ejemplo
-    st.subheader("📈 Distribución de Utilidad por Score")
-    
-    # Datos de ejemplo para gráfico
-    df_scores = pd.DataFrame({
-        'Score': [1, 2, 3, 4, 5],
-        'Útiles': [45, 78, 156, 234, 312],
-        'No Útiles': [123, 98, 67, 45, 23]
-    })
-    
-    fig_scores = go.Figure()
-    fig_scores.add_trace(go.Bar(
-        name='Útiles',
-        x=df_scores['Score'],
-        y=df_scores['Útiles'],
-        marker_color='lightgreen'
-    ))
-    fig_scores.add_trace(go.Bar(
-        name='No Útiles',
-        x=df_scores['Score'],
-        y=df_scores['No Útiles'],
-        marker_color='lightcoral'
-    ))
-    
-    fig_scores.update_layout(
-        title='Distribución de Reseñas Útiles vs No Útiles por Score',
-        xaxis_title='Score (1-5)',
-        yaxis_title='Cantidad de Reseñas',
-        barmode='group',
-        height=400
-    )
-    
-    st.plotly_chart(fig_scores, use_container_width=True)
-    
-    st.markdown("---")
-    
-    # Dos columnas para más gráficos
-    col_graf1, col_graf2 = st.columns(2)
-    
-    with col_graf1:
-        st.subheader("💬 Longitud de Reseñas")
-        
-        # Datos de ejemplo
-        df_length = pd.DataFrame({
-            'Categoría': ['Muy Corta (1-20)', 'Corta (21-50)', 'Media (51-100)', 'Larga (101+)'],
-            'Cantidad': [234, 456, 389, 155],
-            'Utilidad': [45, 62, 78, 85]
-        })
-        
-        fig_length = px.bar(
-            df_length,
-            x='Categoría',
-            y='Cantidad',
-            color='Utilidad',
-            title='Distribución por Longitud de Texto',
-            color_continuous_scale='Blues',
-            text_auto=True
-        )
-        fig_length.update_layout(showlegend=False)
-        st.plotly_chart(fig_length, use_container_width=True)
-    
-    with col_graf2:
-        st.subheader("😊 Análisis de Sentimiento")
-        
-        # Datos de ejemplo
-        df_sentiment = pd.DataFrame({
-            'Sentimiento': ['Muy Negativo', 'Negativo', 'Neutral', 'Positivo', 'Muy Positivo'],
-            'Porcentaje': [8, 15, 23, 35, 19]
-        })
-        
-        fig_sentiment = px.pie(
-            df_sentiment,
-            values='Porcentaje',
-            names='Sentimiento',
-            title='Distribución de Sentimiento en Reseñas',
-            color_discrete_sequence=px.colors.sequential.RdBu
-        )
-        st.plotly_chart(fig_sentiment, use_container_width=True)
 
-# ==================== PESTAÑA 2: PREDICCIÓN ML ====================
+    if df is None:
+        st.error("No se puede generar EDA porque no existe el dataset.")
+        st.stop()
+
+    # ================================================================
+    # MÉTRICAS GENERALES (REEMPLAZADAS CON DATOS REALES)
+    # ================================================================
+
+    st.subheader("📊 Métricas Generales del Sistema")
+
+    total_reviews = len(df)
+    helpful_rate = df["IsHelpful"].mean() * 100
+    avg_words = df["word_count"].mean()
+    avg_confidence = "Alta" if helpful_rate > 65 else "Media"
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    col1.metric("Reseñas Analizadas", f"{total_reviews:,}")
+    col2.metric("Tasa de Utilidad", f"{helpful_rate:.2f}%")
+    col3.metric("Confianza Promedio", avg_confidence)
+    col4.metric("Palabras Promedio", f"{avg_words:.1f}")
+
+    st.markdown("---")
+
+    # ================================================================
+    # DISTRIBUCIÓN DE UTILIDAD POR SCORE
+    # ================================================================
+
+    st.subheader("📈 Distribución de Utilidad por Score")
+
+    score_df = df.groupby("Score")["IsHelpful"].agg(["sum", "count"])
+    score_df["NoUseful"] = score_df["count"] - score_df["sum"]
+    score_df.rename(columns={"sum": "Useful"}, inplace=True)
+
+    fig_scores = go.Figure()
+    fig_scores.add_bar(x=score_df.index, y=score_df["Useful"], name="Útiles", marker_color="green")
+    fig_scores.add_bar(x=score_df.index, y=score_df["NoUseful"], name="No Útiles", marker_color="red")
+
+    fig_scores.update_layout(
+        title="Distribución de Reseñas Útiles vs No Útiles por Score",
+        barmode="group",
+        xaxis_title="Score (1-5)",
+        yaxis_title="Cantidad"
+    )
+
+    st.plotly_chart(fig_scores, use_container_width=True)
+
+    st.markdown("---")
+
+    # ================================================================
+    # LONGITUD DE RESEÑAS
+    # ================================================================
+
+    colA, colB = st.columns(2)
+
+    with colA:
+        st.subheader("💬 Longitud de Reseñas")
+
+        df["LengthCategory"] = pd.cut(
+            df["word_count"],
+            bins=[0, 20, 50, 100, 9999],
+            labels=["Muy Corta", "Corta", "Media", "Larga"]
+        )
+
+        length_df = df["LengthCategory"].value_counts().reset_index()
+        length_df.columns = ["Categoría", "Cantidad"]
+
+        fig_len = px.bar(
+            length_df,
+            x="Categoría",
+            y="Cantidad",
+            color="Cantidad",
+            title="Distribución por Longitud de Texto",
+            color_continuous_scale="Blues"
+        )
+
+        st.plotly_chart(fig_len, use_container_width=True)
+
+    # ================================================================
+    # ANÁLISIS DE SENTIMIENTO USANDO DATA REAL
+    # ================================================================
+
+    with colB:
+        st.subheader("😊 Análisis de Sentimiento (VADER)")
+
+        sentiment_df = pd.cut(
+            df["vader_compound"],
+            bins=[-1, -0.3, 0.3, 1],
+            labels=["Negativo", "Neutral", "Positivo"]
+        ).value_counts().reset_index()
+        sentiment_df.columns = ["Sentimiento", "Cantidad"]
+
+        fig_sent = px.pie(
+            sentiment_df,
+            names="Sentimiento",
+            values="Cantidad",
+            title="Distribución de Sentimiento en Reseñas"
+        )
+
+        st.plotly_chart(fig_sent, use_container_width=True)
+
+# =====================================================================
+# ============================= TAB 2 =================================
+# =====================================================================
 with tab2:
     st.header("🤖 Predicción de Utilidad de Reseñas")
     st.markdown("Escribe una reseña y obtén una predicción de su utilidad en tiempo real")
@@ -341,9 +500,13 @@ with tab2:
                             # Nivel de confianza
                             confidence = data["confidence"]
                             confidence_colors = {
-                                "high": "🟢",
-                                "medium": "🟡",
-                                "low": "🔴"
+                                "Muy alta": "🟩",   # Verde oscuro
+                                "alta": "🟢",        # Verde
+                                "Medio alta": "🟨", # Amarillo verdoso
+                                "Media": "🟡",      # Amarillo
+                                "Medio baja": "🟧",  # Naranja
+                                "Baja": "🟥",         # Rojo
+                                "Muy baja": "🟫"     # Rojo oscuro / marrón oscuro
                             }
                             st.info(f"{confidence_colors.get(confidence, '⚪')} Nivel de Confianza: **{confidence.upper()}**")
                         
