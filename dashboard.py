@@ -174,6 +174,7 @@ st.set_page_config(
 )
 
 # Configuración
+<<<<<<< HEAD
 API_URL = "http://localhost:8000"
 DATA_PATH = os.path.join("data", "amazon_reviews_with_features.csv")
 
@@ -188,6 +189,9 @@ def load_data():
     return None
 
 df = load_data()
+=======
+API_URL = "http://m4gk0ko4sccg8gsokco04so0.31.97.10.143.sslip.io"
+>>>>>>> 6f360a86883e747f4d8320a2ec0d8b981e5c5d3e
 
 # Función para verificar la API
 def check_api():

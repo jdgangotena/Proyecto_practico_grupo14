@@ -6,6 +6,7 @@ Sistema de Machine Learning y NLP para predecir la utilidad de reseñas de produ
 
 Este proyecto construye un **Asistente de Reseñas** que predice si una reseña será considerada útil por otros usuarios, basándose en características extraídas del texto mediante técnicas de NLP (Procesamiento de Lenguaje Natural).
 
+
 ### Componentes Principales
 
 1. **Pipeline de Datos**: Carga, limpieza y preprocesamiento de reseñas de Amazon
@@ -18,39 +19,109 @@ Este proyecto construye un **Asistente de Reseñas** que predice si una reseña 
 
 Predecir la "puntuación de utilidad" de una reseña calculando características de calidad del texto y entrenando un modelo que aprenda la relación entre estas características y la utilidad percibida por usuarios.
 
-## 🗂️ Estructura del Proyecto
+## 🗂️ Estructura del Proyecto por carpetas
+## pz
 
 ```
-opiniones_ecommners-1/
+proyecto/
 ├── scripts/
 │   ├── data_loader.py         # Carga y validación de datos
 │   ├── limpieza.py            # Limpieza y cálculo de tasa de utilidad
 │   ├── nlp_features.py        # Extracción de características NLP
 │   └── model_training.py      # Entrenamiento del modelo LightGBM
 ├── api_app.py                 # API FastAPI
-├── dashboard.py               # Dashboard interactivo con Dash
+├── dashboard.py               # Dashboard interactivo con Streamlit
 ├── requirements.txt           # Dependencias del proyecto
+├── Dockerfile                 # Configuración Docker
+├── docker-compose.yml         # Orquestación Docker
+├── deploy.sh                  # Script de despliegue automático
 ├── data/                      # Datos (no incluido en repo)
-│   ├── Reviews.csv
-│   ├── amazon_reviews_prepared.csv
-│   └── amazon_reviews_with_features.csv
 ├── models/                    # Modelos entrenados
-│   └── review_helpfulness_model_latest.pkl
 └── plots/                     # Gráficos generados
-    ├── roc_curve.html
-    ├── feature_importance.html
-    └── probability_distribution.html
 ```
 
-## 🚀 Instalación
+---
 
-### 1. Clonar el repositorio
+## 🚀 Instalación y Ejecución
+
+### Opción 1: 🐳 Docker (Recomendado para Producción)
+
+#### Pre-requisitos
+- Docker instalado y corriendo
+- Modelo entrenado en `models/review_helpfulness_model_latest.pkl`
+
+#### Deploy Rápido
 
 ```bash
-cd opiniones_ecommners-1
+# Opción A: Script automático (más fácil)
+./deploy.sh deploy
+
+# Opción B: Docker Compose
+docker-compose up -d --build
 ```
 
-### 2. Crear entorno virtual
+#### Verificar que funciona
+
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# Documentación interactiva
+open http://localhost:8000/docs
+```
+
+#### Comandos útiles
+
+```bash
+./deploy.sh          # Menú interactivo
+./deploy.sh logs     # Ver logs en tiempo real
+./deploy.sh restart  # Reiniciar servicio
+./deploy.sh stop     # Detener servicio
+./deploy.sh health   # Verificar salud
+
+# O con docker-compose:
+docker-compose logs -f api
+docker-compose restart api
+docker-compose down
+```
+
+#### Características Docker
+
+- ✅ Imagen multi-stage optimizada (~700 MB)
+- ✅ Usuario no-root para seguridad
+- ✅ Health checks automáticos
+- ✅ Auto-restart en caso de fallos
+- ✅ NLTK data precargada
+- ✅ Volúmenes para actualizar modelos sin rebuild
+
+#### Actualizar modelo sin rebuild
+
+```bash
+# 1. Entrenar nuevo modelo
+python scripts/model_training.py
+
+# 2. Reiniciar contenedor (montará el nuevo modelo)
+./deploy.sh restart
+```
+
+#### Deploy en producción con Nginx
+
+```bash
+# Usar configuración de producción
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+Incluye:
+- Nginx como reverse proxy
+- Configuración SSL/HTTPS
+- Rate limiting
+- Logs estructurados
+
+---
+
+### Opción 2: 💻 Instalación Local (Desarrollo)
+
+#### 1. Crear entorno virtual
 
 ```bash
 python -m venv venv
@@ -62,94 +133,101 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-### 3. Instalar dependencias
+#### 2. Instalar dependencias
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Descargar dataset
+#### 3. Descargar dataset
 
 Descarga el dataset **Amazon Fine Food Reviews** desde Kaggle:
 - URL: https://www.kaggle.com/snap/amazon-fine-food-reviews
 - Coloca el archivo `Reviews.csv` en la carpeta `data/`
 
-## 📊 Pipeline de Ejecución
-
-### Paso 1: Cargar y Explorar Datos
+#### 4. Ejecutar pipeline de entrenamiento
 
 ```bash
 cd scripts
+
+# Paso 1: Cargar y explorar datos
 python data_loader.py
+
+# Paso 2: Limpieza y preprocesamiento
+python limpieza.py
+
+# Paso 3: Extracción de características NLP
+python nlp_features.py
+
+# Paso 4: Entrenar modelo
+python model_training.py
 ```
 
-**Funcionalidades:**
+#### 5. Iniciar API
+
+```bash
+# Volver a la raíz del proyecto
+cd ..
+
+# Iniciar API
+python api_app.py
+```
+
+La API estará disponible en: `http://localhost:8000`
+
+#### 6. Iniciar Dashboard (Opcional)
+
+```bash
+# En otra terminal, con la API corriendo
+python dashboard.py
+```
+
+Dashboard disponible en: `http://localhost:8050`
+
+---
+
+## 📊 Pipeline de Datos
+
+### Paso 1: Carga de Datos
+**Script:** `scripts/data_loader.py`
+
 - Carga el dataset de reseñas
 - Valida columnas requeridas
 - Muestra estadísticas básicas
 - Calcula tasa de utilidad promedio
 
 ### Paso 2: Limpieza y Preprocesamiento
+**Script:** `scripts/limpieza.py`
 
-```bash
-python limpieza.py
-```
-
-**Funcionalidades:**
 - Calcula tasa de utilidad: `HelpfulnessNumerator / HelpfulnessDenominator`
 - Crea etiqueta binaria `IsHelpful` (umbral: 70%)
 - Limpia texto: lowercase, URLs, caracteres especiales
-- Guarda dataset preparado: `data/amazon_reviews_prepared.csv`
+- Guarda: `data/amazon_reviews_prepared.csv`
 
 ### Paso 3: Extracción de Características NLP
+**Script:** `scripts/nlp_features.py`
 
-```bash
-python nlp_features.py
-```
+**Características extraídas:**
 
-**Características Extraídas:**
-
-**Longitud y Estructura:**
-- `char_count`: Número de caracteres
-- `word_count`: Número de palabras
-- `sentence_count`: Número de oraciones
-- `avg_word_length`: Longitud promedio de palabras
-- `words_per_sentence`: Palabras por oración
-
-**Léxicas:**
-- `exclamation_count`: Exclamaciones
-- `question_count`: Preguntas
-- `uppercase_word_count`: Palabras en mayúsculas
-- `lexical_diversity`: Type-token ratio
-
-**Sentimiento:**
-- `vader_neg`, `vader_neu`, `vader_pos`, `vader_compound`: Sentimiento VADER
-- `textblob_polarity`: Polaridad (-1 a 1)
-- `textblob_subjectivity`: Subjetividad (0 a 1)
-
-**Adicionales:**
-- `digit_ratio`: Proporción de dígitos
-- `review_score`: Calificación en estrellas
+| Categoría | Características |
+|-----------|----------------|
+| **Longitud y Estructura** | `char_count`, `word_count`, `sentence_count`, `avg_word_length`, `words_per_sentence` |
+| **Léxicas** | `exclamation_count`, `question_count`, `uppercase_word_count`, `lexical_diversity` |
+| **Sentimiento** | `vader_neg`, `vader_neu`, `vader_pos`, `vader_compound`, `textblob_polarity`, `textblob_subjectivity` |
+| **Adicionales** | `digit_ratio`, `review_score` |
 
 **Salida:** `data/amazon_reviews_with_features.csv`
 
-### Paso 4: Entrenar Modelo
+### Paso 4: Entrenamiento del Modelo
+**Script:** `scripts/model_training.py`
 
-```bash
-python model_training.py
-```
-
-**Funcionalidades:**
-- Entrena modelo LightGBM con características NLP
-- Split train/test: 80/20
+- Algoritmo: **LightGBM** (Gradient Boosting)
+- Split: 80/20 (train/test)
 - Métricas: Accuracy, Precision, Recall, F1-Score, ROC-AUC
-- Genera gráficos con Plotly:
-  - Curva ROC
-  - Importancia de características
-  - Distribución de probabilidades
+- Genera visualizaciones: ROC curve, feature importance, probability distribution
 - Guarda modelo: `models/review_helpfulness_model_latest.pkl`
 
-**Ejemplo de Salida:**
+**Ejemplo de salida:**
 ```
 Métricas de evaluación:
   accuracy: 0.8234
@@ -159,20 +237,20 @@ Métricas de evaluación:
   roc_auc: 0.8891
 ```
 
-## 🌐 API REST con FastAPI
+**Características más importantes:**
+1. `word_count`: Longitud de la reseña
+2. `vader_compound`: Sentimiento general
+3. `sentence_count`: Estructura del texto
+4. `review_score`: Calificación en estrellas
+5. `lexical_diversity`: Variedad de vocabulario
 
-### Iniciar API
+---
 
-```bash
-python api_app.py
-```
+## 🌐 API REST
 
-La API estará disponible en: `http://localhost:8000`
-
-### Endpoints
+### Endpoints Disponibles
 
 #### 1. Health Check
-
 ```bash
 GET http://localhost:8000/health
 ```
@@ -188,15 +266,12 @@ GET http://localhost:8000/health
 ```
 
 #### 2. Predicción de Utilidad
-
 ```bash
 POST http://localhost:8000/reviews/predict_helpfulness
-```
+Content-Type: application/json
 
-**Request Body:**
-```json
 {
-  "text": "This product is amazing! It works exactly as described and the quality is excellent. I highly recommend it to anyone looking for a reliable solution.",
+  "text": "This product is amazing! It works exactly as described and the quality is excellent.",
   "score": 5
 }
 ```
@@ -212,8 +287,7 @@ POST http://localhost:8000/reviews/predict_helpfulness
     "word_count": 28,
     "sentence_count": 2,
     "vader_compound": 0.8915,
-    "textblob_polarity": 0.75,
-    ...
+    "textblob_polarity": 0.75
   },
   "suggestions": [
     "¡Excelente reseña! Es informativa y probablemente será útil para otros usuarios."
@@ -222,22 +296,58 @@ POST http://localhost:8000/reviews/predict_helpfulness
 ```
 
 #### 3. Información del Modelo
-
 ```bash
 GET http://localhost:8000/model/info
 ```
 
+Devuelve metadatos del modelo cargado, características y métricas de evaluación.
+
 ### Documentación Interactiva
 
 FastAPI genera documentación automática:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+### Ejemplos de uso con cURL
+
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# Predicción
+curl -X POST http://localhost:8000/reviews/predict_helpfulness \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Great product! Highly recommend. Works perfectly and arrived on time.",
+    "score": 5
+  }'
+```
+
+---
 
 ## 📱 Dashboard Interactivo
 
-### Iniciar Dashboard
+### Funcionalidades
 
-**Importante:** La API debe estar ejecutándose primero.
+1. **Editor de Reseñas**
+   - Selector de calificación (1-5 estrellas)
+   - Área de texto para escribir reseña
+   - Contador de palabras y caracteres en tiempo real
+
+2. **Análisis en Tiempo Real**
+   - Indicador de utilidad (Útil / Poco Útil)
+   - Gráfico gauge con puntuación 0-100%
+   - Nivel de confianza de la predicción
+
+3. **Sugerencias Personalizadas**
+   - Recomendaciones para mejorar la reseña
+   - Feedback sobre longitud, sentimiento, estructura
+
+4. **Visualización de Características**
+   - Gráfico de barras con características extraídas
+   - Valores numéricos de métricas NLP
+
+### Iniciar Dashboard
 
 ```bash
 # Terminal 1: Iniciar API
@@ -249,105 +359,66 @@ python dashboard.py
 
 Dashboard disponible en: `http://localhost:8050`
 
-### Funcionalidades del Dashboard
+---
 
-1. **Editor de Reseñas:**
-   - Selector de calificación (1-5 estrellas)
-   - Área de texto para escribir reseña
-   - Contador de palabras y caracteres en tiempo real
+## ⚙️ Configuración Avanzada
 
-2. **Análisis en Tiempo Real:**
-   - Indicador de utilidad (Útil / Poco Útil)
-   - Gráfico gauge con puntuación 0-100%
-   - Nivel de confianza de la predicción
+### Variables de Entorno
 
-3. **Sugerencias Personalizadas:**
-   - Recomendaciones para mejorar la reseña
-   - Feedback sobre longitud, sentimiento, estructura
+Crea un archivo `.env` (ver `.env.example`):
 
-4. **Visualización de Características:**
-   - Gráfico de barras con características extraídas
-   - Valores numéricos de métricas NLP
-
-## 📈 Características del Modelo
-
-### Algoritmo
-
-- **LightGBM** (Gradient Boosting)
-  - Rápido y eficiente
-  - Maneja bien features numéricas
-  - Reduce overfitting con regularización
-
-### Hiperparámetros
-
-```python
-{
-    'objective': 'binary',
-    'metric': 'binary_logloss',
-    'num_leaves': 31,
-    'learning_rate': 0.05,
-    'feature_fraction': 0.9,
-    'bagging_fraction': 0.8
-}
+```env
+API_HOST=0.0.0.0
+API_PORT=8000
+API_WORKERS=4
+API_CORS_ORIGINS=http://localhost:3000,https://tu-dominio.com
+LOG_LEVEL=INFO
 ```
-
-### Métricas de Evaluación
-
-- **Accuracy**: Porcentaje de predicciones correctas
-- **Precision**: Proporción de predicciones positivas correctas
-- **Recall**: Proporción de casos positivos detectados
-- **F1-Score**: Media armónica de precision y recall
-- **ROC-AUC**: Área bajo la curva ROC
-
-## 🔧 Uso Avanzado
 
 ### Entrenar con Dataset Completo
 
-Por defecto, los scripts cargan 50,000 filas para pruebas rápidas. Para entrenar con todo el dataset:
+Por defecto, los scripts cargan 50,000 filas. Para usar el dataset completo:
 
 ```python
-# En limpieza.py, línea 211
+# En limpieza.py
 df = cargar_datos(DATA_PATH, nrows=None)  # Quitar nrows
-
-# O desde línea de comandos
-python limpieza.py --full-dataset
 ```
 
 ### Ajustar Umbral de Utilidad
 
 ```python
-# En limpieza.py, línea 218
-df = calcular_tasa_utilidad(df, umbral=0.6)  # Cambiar umbral
+# En limpieza.py
+df = calcular_tasa_utilidad(df, umbral=0.6)  # Cambiar de 0.7 a 0.6
 ```
 
-### Personalizar Modelo
+### Personalizar Hiperparámetros
 
 ```python
 # En model_training.py
 custom_params = {
     'num_leaves': 50,
     'learning_rate': 0.03,
-    'max_depth': 10
+    'max_depth': 10,
+    'feature_fraction': 0.9,
+    'bagging_fraction': 0.8
 }
-model.entrenar(X_train, y_train, params=custom_params)
 ```
 
-## 📊 Resultados Esperados
+### Usar Gunicorn para Producción
 
-Con el dataset completo (568,454 reseñas), se esperan resultados similares a:
+```bash
+# Instalar gunicorn
+pip install gunicorn
 
-- **ROC-AUC**: ~0.88-0.91
-- **Accuracy**: ~0.82-0.85
-- **F1-Score**: ~0.81-0.84
+# Ejecutar con múltiples workers
+gunicorn api_app:app \
+  --workers 4 \
+  --worker-class uvicorn.workers.UvicornWorker \
+  --bind 0.0.0.0:8000 \
+  --timeout 60
+```
 
-### Características Más Importantes
-
-Típicamente, las características más predictivas son:
-1. `word_count`: Longitud de la reseña
-2. `vader_compound`: Sentimiento general
-3. `sentence_count`: Estructura del texto
-4. `review_score`: Calificación en estrellas
-5. `lexical_diversity`: Variedad de vocabulario
+---
 
 ## 🐛 Troubleshooting
 
@@ -364,14 +435,26 @@ python model_training.py
 ```bash
 # Verificar que la API esté ejecutándose
 curl http://localhost:8000/health
+
+# Ver logs si usa Docker
+docker-compose logs api
+```
+
+### Error: Puerto 8000 en uso
+
+```bash
+# Cambiar puerto en docker-compose.yml
+ports:
+  - "8001:8000"
+
+# O al ejecutar localmente
+uvicorn api_app:app --host 0.0.0.0 --port 8001
 ```
 
 ### Error: Datos no encontrados
 
-```bash
-# Descargar dataset de Kaggle
-# Colocar Reviews.csv en carpeta data/
-```
+Descarga el dataset de Kaggle y colócalo en `data/Reviews.csv`:
+https://www.kaggle.com/snap/amazon-fine-food-reviews
 
 ### Error de NLTK
 
@@ -384,13 +467,205 @@ nltk.download('stopwords')
 nltk.download('wordnet')
 ```
 
+### Docker: Contenedor se reinicia constantemente
+
+```bash
+# Ver logs detallados
+docker-compose logs --tail=100 api
+
+# Verificar health check
+docker inspect review-api | grep -A 10 Health
+```
+
+---
+
+## 🌍 Deploy en Coolify
+
+### Pre-requisitos
+
+- Servidor VPS (DigitalOcean, AWS, Hetzner, etc.)
+- Coolify instalado en tu servidor
+- Repositorio Git (GitHub, GitLab, Bitbucket, etc.)
+
+### Instalación de Coolify
+
+Si aún no tienes Coolify instalado en tu servidor:
+
+```bash
+# Conectar a tu servidor via SSH
+ssh user@tu-servidor.com
+
+# Instalar Coolify (requiere Ubuntu 20.04+ o Debian 11+)
+curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash
+```
+
+Accede al panel de Coolify en: `http://tu-servidor.com:8000`
+
+### Deploy Paso a Paso
+
+#### 1. Preparar el Repositorio
+
+```bash
+# Asegúrate de tener todos los cambios commiteados
+git add .
+git commit -m "Deploy to Coolify"
+git push origin main
+```
+
+#### 2. Crear Aplicación en Coolify
+
+1. **Login en Coolify** (http://tu-servidor.com:8000)
+2. **Crear nuevo proyecto**:
+   - Click en "New Project"
+   - Nombre: `review-api`
+3. **Conectar repositorio Git**:
+   - Click en "Add Source"
+   - Selecciona tu proveedor Git (GitHub, GitLab, etc.)
+   - Autoriza la conexión
+   - Selecciona el repositorio
+
+#### 3. Configurar Aplicación
+
+Coolify detectará automáticamente el `Dockerfile` y configurará:
+
+- ✅ Build con Dockerfile
+- ✅ Puerto: 8000 (automático desde EXPOSE)
+- ✅ Health check: `/health`
+
+**Configuración opcional**:
+- **Dominio personalizado**: Agregar tu dominio
+- **Variables de entorno**: Ver `.env.example`
+- **Puerto personalizado**: Si necesitas cambiar el puerto
+
+#### 4. Variables de Entorno (Opcional)
+
+En el panel de Coolify, agregar si es necesario:
+
+```env
+PORT=8000
+API_CORS_ORIGINS=https://tu-dominio.com
+LOG_LEVEL=INFO
+```
+
+#### 5. Deploy
+
+Click en **"Deploy"** y Coolify automáticamente:
+
+1. Clonará el repositorio
+2. Construirá la imagen Docker
+3. Iniciará el contenedor
+4. Configurará SSL con Let's Encrypt (si tienes dominio)
+5. Expondrá la aplicación
+
+### Características de Coolify
+
+- ✅ **Self-hosted**: Tu propio servidor, control total
+- ✅ **Gratis y Open Source**: Sin costos de plataforma
+- ✅ **SSL Automático**: Let's Encrypt incluido
+- ✅ **Deploy Automático**: Webhook desde Git
+- ✅ **Docker Nativo**: Usa tu Dockerfile
+- ✅ **Logs en Tiempo Real**: Debugging fácil
+- ✅ **Health Checks**: Monitoreo automático
+- ✅ **Auto-restart**: Recuperación automática
+
+### Configurar Deploy Automático
+
+Coolify puede hacer deploy automático cuando haces push:
+
+1. En el dashboard de Coolify → **Webhooks**
+2. Copiar la URL del webhook
+3. En tu repositorio GitHub:
+   - Settings → Webhooks → Add webhook
+   - Pegar la URL de Coolify
+   - Seleccionar eventos: Push events
+4. ¡Listo! Cada push desplegará automáticamente
+
+### Verificar el Deploy
+
+```bash
+# Reemplaza con tu dominio o IP
+export API_URL="https://tu-dominio.com"
+
+# Health check
+curl $API_URL/health
+
+# Documentación
+open $API_URL/docs
+
+# Hacer predicción
+curl -X POST $API_URL/reviews/predict_helpfulness \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Amazing product! Highly recommend.",
+    "score": 5
+  }'
+```
+
+### Logs y Debugging
+
+En el dashboard de Coolify:
+- **Logs**: Ver logs en tiempo real
+- **Build Logs**: Revisar el proceso de build
+- **Restart**: Reiniciar la aplicación
+- **Rebuild**: Reconstruir desde cero
+
+### Actualizar el Modelo
+
+```bash
+# 1. Entrenar nuevo modelo localmente
+python scripts/model_training.py
+
+# 2. Commitear y push
+git add models/
+git commit -m "Update model"
+git push origin main
+
+# 3. Coolify redesplegará automáticamente (si webhook configurado)
+# O hacer rebuild manual desde el dashboard
+```
+
+### Mejores Prácticas para Producción
+
+1. **Seguridad**
+   - Usuario no-root en contenedor ✅
+   - HTTPS/SSL con certificados válidos
+   - Variables de entorno para secrets
+   - Rate limiting en endpoints
+
+2. **Performance**
+   - Usar Gunicorn con múltiples workers
+   - Configurar timeouts apropiados
+   - Implementar caché para predicciones frecuentes
+   - Monitoreo con Prometheus/Grafana
+
+3. **Mantenibilidad**
+   - CI/CD con GitHub Actions
+   - Versionado de imágenes Docker
+   - Logs estructurados (JSON)
+   - Backups automáticos de modelos
+
+---
+
+## 📊 Resultados Esperados
+
+Con el dataset completo (568,454 reseñas):
+
+- **ROC-AUC**: ~0.88-0.91
+- **Accuracy**: ~0.82-0.85
+- **F1-Score**: ~0.81-0.84
+
+---
+
 ## 📚 Recursos
 
 - **Dataset**: [Amazon Fine Food Reviews (Kaggle)](https://www.kaggle.com/snap/amazon-fine-food-reviews)
 - **LightGBM**: [Documentación oficial](https://lightgbm.readthedocs.io/)
 - **FastAPI**: [Documentación oficial](https://fastapi.tiangolo.com/)
-- **Dash**: [Documentación oficial](https://dash.plotly.com/)
+- **Streamlit**: [Documentación oficial](https://docs.streamlit.io/)
 - **NLTK**: [Natural Language Toolkit](https://www.nltk.org/)
+- **Docker**: [Documentación oficial](https://docs.docker.com/)
+
+---
 
 ## 🤝 Contribuciones
 
@@ -406,4 +681,23 @@ Proyecto desarrollado como caso de estudio de Aprendizaje Supervisado y NLP.
 
 ---
 
-**¿Preguntas?** Consulta la documentación interactiva de la API en http://localhost:8000/docs
+## 🎯 Quick Start
+
+```bash
+# 1. Clonar repo y navegar
+cd Proyecto_practico_grupo14
+
+# 2. Deploy con Docker (opción más rápida)
+./deploy.sh deploy
+
+# 3. Probar API
+curl http://localhost:8000/health
+open http://localhost:8000/docs
+
+# 4. Hacer predicción
+curl -X POST http://localhost:8000/reviews/predict_helpfulness \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Amazing product!", "score": 5}'
+```
+
+**¿Preguntas?** Consulta la documentación interactiva en http://localhost:8000/docs
