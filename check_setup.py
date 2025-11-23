@@ -39,7 +39,7 @@ def check_dependencies():
         ('plotly', 'plotly'),
         ('fastapi', 'fastapi'),
         ('uvicorn', 'uvicorn'),
-        ('dash', 'dash'),
+        ('streamlit', 'streamlit'),  # Corregido: dashboard usa Streamlit, no Dash
         ('requests', 'requests'),
     ]
 

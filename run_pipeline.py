@@ -72,7 +72,8 @@ def run_pipeline(nrows=50000, skip_training=False):
         )
 
         # Calcular tasa de utilidad
-        df = calcular_tasa_utilidad(df, umbral=0.7)
+        # CRÍTICO: min_votes=None incluye TODAS las reseñas (sin sesgo)
+        df = calcular_tasa_utilidad(df, umbral=0.7, min_votes=None)
 
         if len(df) == 0:
             print("❌ ERROR: No hay datos después de filtrar por votos")
@@ -114,13 +115,18 @@ def run_pipeline(nrows=50000, skip_training=False):
             model = ReviewHelpfulnessModel()
 
             # Preparar datos
-            X_train, X_test, y_train, y_test = model.preparar_datos(df_con_features, target='IsHelpful')
+            X_train, X_val, X_test, y_train, y_val, y_test = model.preparar_datos(df_con_features, target='IsHelpful')
 
             # Entrenar modelo
             model.entrenar(X_train, y_train)
 
             # Evaluar modelo
-            metrics = model.evaluar(X_test, y_test)
+            metrics, y_pred_proba, y_pred = model.evaluar(
+                X_test, y_test,
+                X_val=X_val,
+                y_val=y_val
+            )
+
 
             # Obtener importancia de características
             feature_importance = model.obtener_importancia_features()
@@ -149,10 +155,16 @@ def run_pipeline(nrows=50000, skip_training=False):
         print(f"  • Filas procesadas: {len(df_con_features)}")
         print(f"  • Características extraídas: {len(df_con_features.columns)}")
 
+        # Verificar que incluye features de sentimiento
+        sentiment_features = ['vader_compound', 'textblob_polarity']
+        has_sentiment = all(f in df_con_features.columns for f in sentiment_features)
+        print(f"  • Features de sentimiento: {'✓ Incluidas' if has_sentiment else '✗ FALTANTES'}")
+
         if not skip_training:
             print(f"\n📈 MÉTRICAS DEL MODELO:")
             for metric, value in metrics.items():
                 print(f"  • {metric}: {value:.4f}")
+            print(f"  • Features usadas: {len(model.feature_columns)}")
 
         print(f"\n⏱️  Tiempo total: {minutes}m {seconds}s")
         print(f"✓ Fin: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

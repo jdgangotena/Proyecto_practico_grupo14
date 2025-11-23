@@ -1,0 +1,23 @@
+
+import sys
+import os
+import pandas as pd
+
+# Add scripts to path
+sys.path.append(os.path.join(os.getcwd(), 'scripts'))
+
+from nlp_features import NLPFeatureExtractor
+
+spanish_text = "Este té verde orgánico es absolutamente fantástico. Su sabor es fresco y limpio, con sutiles notas herbáceas que no resultan abrumadoras. Lo he estado bebiendo a diario durante los últimos tres meses y he notado una mayor energía sin el nerviosismo que me produce el café. La calidad es notablemente mejor que la de Lipton o Twinings: se ven las hojas enteras en lugar de polvo. Un poco caro, a $15 por caja, pero vale totalmente la pena por la calidad. Cada bolsita se puede remojar dos veces, lo que lo hace más económico. Lo recomiendo ampliamente para quienes buscan dejar de tomar café o ampliar su selección de tés."
+
+extractor = NLPFeatureExtractor()
+features = extractor.extraer_todas_caracteristicas(spanish_text, score=5)
+
+print("\n--- Features for Spanish Text ---")
+for key, value in features.items():
+    print(f"{key}: {value}")
+
+print("\n--- Analysis ---")
+print(f"VADER Compound: {features.get('vader_compound')} (Expected ~0 for non-English)")
+print(f"TextBlob Polarity: {features.get('textblob_polarity')} (Expected ~0 for non-English)")
+print(f"Specificity Score: {features.get('specificity_score')} (Expected low/0)")

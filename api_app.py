@@ -11,13 +11,15 @@ import os
 import sys
 import pickle
 import json
+from deep_translator import GoogleTranslator
 
-# Obtener el directorio actual del archivo
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Obtener el directorio actual del archivo (PROJECT_ROOT)
+# CRÍTICO: Usar rutas absolutas consistentes con model_training.py
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 # Añadir el directorio raíz al path (para importar desde scripts)
-if SCRIPT_DIR not in sys.path:
-    sys.path.insert(0, SCRIPT_DIR)
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 # Importar el extractor de características
 try:
@@ -28,8 +30,8 @@ except ImportError as e:
     print(f"⚠️ Asegúrate de que existe scripts/__init__.py y scripts/nlp_features.py")
     NLPFeatureExtractor = None
 
-# Configuración
-MODEL_DIR = os.path.join(SCRIPT_DIR, "models")
+# Configuración - rutas absolutas desde PROJECT_ROOT
+MODEL_DIR = os.path.join(PROJECT_ROOT, "models")
 MODEL_PATH = os.path.join(MODEL_DIR, "review_helpfulness_model_latest.pkl")
 METADATA_PATH = os.path.join(MODEL_DIR, "review_helpfulness_model_latest_metadata.json")
 
@@ -41,9 +43,12 @@ app = FastAPI(
 )
 
 # Configurar CORS
+# NOTA DE SEGURIDAD: allow_origins=["*"] permite todos los orígenes (OK para desarrollo)
+# En producción, restringir a dominios específicos:
+# allow_origins=["https://tu-dominio.com", "http://localhost:3000"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # TODO: Restringir en producción
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,6 +58,7 @@ app.add_middleware(
 model = None
 feature_columns = None
 feature_extractor = None
+best_threshold = 0.5  # Default, will be updated from metadata
 
 
 # Modelos de datos
@@ -77,6 +83,7 @@ class PredictionResponse(BaseModel):
     confidence: str = Field(..., description="Nivel de confianza: 'high', 'medium', 'low'")
     features: Dict[str, float] = Field(..., description="Características extraídas de la reseña")
     suggestions: List[str] = Field(..., description="Sugerencias para mejorar la reseña")
+    translated_text: Optional[str] = Field(None, description="Texto traducido al inglés (si aplicó traducción)")
 
 
 class HealthResponse(BaseModel):
@@ -90,7 +97,7 @@ class HealthResponse(BaseModel):
 # Funciones auxiliares
 def cargar_modelo():
     """Carga el modelo y sus metadatos."""
-    global model, feature_columns, feature_extractor
+    global model, feature_columns, feature_extractor, best_threshold
 
     if NLPFeatureExtractor is None:
         raise ImportError(
@@ -113,6 +120,8 @@ def cargar_modelo():
         with open(METADATA_PATH, 'r') as f:
             metadata = json.load(f)
             feature_columns = metadata.get('feature_columns', [])
+            best_threshold = metadata.get('best_threshold', 0.5)
+            print(f"✓ Umbral óptimo cargado: {best_threshold:.4f}")
     else:
         raise FileNotFoundError(f"Metadatos no encontrados en {METADATA_PATH}")
 
@@ -185,11 +194,17 @@ def clasificar_confianza(probability: float) -> str:
     """
     Clasifica el nivel de confianza de la predicción.
 
+    Lógica: Alta confianza cuando la probabilidad está cerca de los extremos (0 o 1),
+    baja confianza cuando está cerca de 0.5 (indecisión).
+
     Args:
-        probability: Probabilidad predicha
+        probability: Probabilidad predicha (0-1)
 
     Returns:
         Nivel de confianza: 'high', 'medium', 'low'
+        - high: prob >= 0.7 OR prob <= 0.3 (predicción clara)
+        - medium: prob >= 0.55 OR prob <= 0.45 (predicción moderada)
+        - low: prob entre 0.45 y 0.55 (indecisión)
     """
     if probability >= 0.7 or probability <= 0.3:
         return "high"
@@ -197,6 +212,21 @@ def clasificar_confianza(probability: float) -> str:
         return "medium"
     else:
         return "low"
+
+
+def traducir_texto(text: str) -> str:
+    """
+    Traduce el texto al inglés si es necesario.
+    Usa deep-translator (Google Translate).
+    """
+    try:
+        # GoogleTranslator detecta automáticamente el idioma de origen
+        translator = GoogleTranslator(source='auto', target='en')
+        translated = translator.translate(text)
+        return translated
+    except Exception as e:
+        print(f"⚠️ Error en traducción: {e}")
+        return text  # Fallback al texto original
 
 
 # Eventos de la aplicación
@@ -255,8 +285,35 @@ async def predict_helpfulness(review: ReviewInput):
         )
 
     try:
-        # Extraer características
-        features = feature_extractor.extraer_todas_caracteristicas(review.text, review.score)
+        # Traducir texto si es necesario (para mejorar extracción de features)
+        translated_text = traducir_texto(review.text)
+        was_translated = translated_text != review.text
+        
+        # Extraer características (usando texto traducido)
+        features = feature_extractor.extraer_todas_caracteristicas(translated_text, review.score)
+
+        # ALTA: Garantizar que todas las features esperadas existen (fallback a 0)
+        # Esto evita KeyError en el dashboard y asegura compatibilidad
+        expected_features = {
+            # Características de longitud
+            'char_count': 0, 'word_count': 0, 'avg_word_length': 0,
+            'sentence_count': 0, 'words_per_sentence': 0,
+            # Características léxicas
+            'exclamation_count': 0, 'question_count': 0,
+            'uppercase_word_count': 0, 'lexical_diversity': 0,
+            # Sentimiento (CRÍTICO - ahora sí se extraen)
+            'vader_neg': 0, 'vader_neu': 0, 'vader_pos': 0, 'vader_compound': 0,
+            'textblob_polarity': 0, 'textblob_subjectivity': 0,
+            # Características básicas
+            'digit_ratio': 0,
+            # Características de dominio
+            'specificity_score': 0, 'has_comparison': 0,
+            'personal_experience_score': 0, 'price_mention': 0
+        }
+
+        # Actualizar con las features extraídas (preservar las que existen)
+        expected_features.update(features)
+        features = expected_features
 
         # Preparar datos para predicción
         feature_values = [features.get(col, 0) for col in feature_columns]
@@ -264,8 +321,8 @@ async def predict_helpfulness(review: ReviewInput):
         # Realizar predicción
         probability = float(model.predict([feature_values])[0])
 
-        # Clasificar
-        is_helpful = probability >= 0.5
+        # Clasificar usando el umbral óptimo
+        is_helpful = probability >= best_threshold
         confidence = clasificar_confianza(probability)
 
         # Generar sugerencias
@@ -276,8 +333,10 @@ async def predict_helpfulness(review: ReviewInput):
             is_helpful=is_helpful,
             confidence=confidence,
             features=features,
-            suggestions=suggestions
+            suggestions=suggestions,
+            translated_text=translated_text if was_translated else None
         )
+
 
     except Exception as e:
         raise HTTPException(

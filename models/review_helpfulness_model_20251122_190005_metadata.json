@@ -1,5 +1,5 @@
 {
-  "timestamp": "20251122_201631",
+  "timestamp": "20251122_190005",
   "model_type": "LightGBM",
   "feature_columns": [
     "char_count",
@@ -22,10 +22,6 @@
     "has_comparison",
     "personal_experience_score",
     "price_mention",
-    "flesch_reading_ease",
-    "gunning_fog",
-    "paragraph_count",
-    "bullet_point_count",
     "ability",
     "ability to",
     "able",
@@ -20047,11 +20043,7 @@
     "specificity_score",
     "has_comparison",
     "personal_experience_score",
-    "price_mention",
-    "flesch_reading_ease",
-    "gunning_fog",
-    "paragraph_count",
-    "bullet_point_count"
+    "price_mention"
   ],
   "use_tfidf": true,
   "tfidf_max_features": 20000,
@@ -20059,13 +20051,13 @@
     1,
     2
   ],
-  "best_threshold": 0.3140973689476343,
+  "best_threshold": 0.5,
   "metrics": {
-    "accuracy": 0.7961504811898513,
-    "precision": 0.8298653610771114,
-    "recall": 0.9346567411083541,
-    "f1_score": 0.879149377593361,
-    "roc_auc": 0.7211638752857392
+    "accuracy": 0.7333770778652668,
+    "precision": 0.864406779661017,
+    "recall": 0.7874276261373035,
+    "f1_score": 0.8241235031020054,
+    "roc_auc": 0.720018439014855
   },
   "params": {
     "objective": "binary",
@@ -20080,5 +20072,5 @@
     "seed": 42,
     "scale_pos_weight": 0.2604962583694368
   },
-  "num_features": 20024
+  "num_features": 20020
 }

@@ -1,5 +1,5 @@
 {
-  "timestamp": "20251122_201631",
+  "timestamp": "20251122_195545",
   "model_type": "LightGBM",
   "feature_columns": [
     "char_count",
@@ -20059,26 +20059,14 @@
     1,
     2
   ],
-  "best_threshold": 0.3140973689476343,
+  "best_threshold": 0.0,
   "metrics": {
-    "accuracy": 0.7961504811898513,
-    "precision": 0.8298653610771114,
-    "recall": 0.9346567411083541,
-    "f1_score": 0.879149377593361,
-    "roc_auc": 0.7211638752857392
+    "accuracy": 0.7933070866141733,
+    "precision": 0.7933070866141733,
+    "recall": 1.0,
+    "f1_score": 0.884742041712404,
+    "roc_auc": 0.7239622583708605
   },
-  "params": {
-    "objective": "binary",
-    "metric": "binary_logloss",
-    "boosting_type": "gbdt",
-    "num_leaves": 31,
-    "learning_rate": 0.05,
-    "feature_fraction": 0.8,
-    "bagging_fraction": 0.8,
-    "bagging_freq": 5,
-    "verbosity": -1,
-    "seed": 42,
-    "scale_pos_weight": 0.2604962583694368
-  },
+  "params": {},
   "num_features": 20024
 }

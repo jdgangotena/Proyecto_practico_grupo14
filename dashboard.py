@@ -8,6 +8,7 @@ import requests
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
+import os
 
 # Configuración de la página
 st.set_page_config(
@@ -17,7 +18,9 @@ st.set_page_config(
 )
 
 # Configuración
-API_URL = "http://m4gk0ko4sccg8gsokco04so0.31.97.10.143.sslip.io"
+##API_URL = "http://m4gk0ko4sccg8gsokco04so0.31.97.10.143.sslip.io"
+API_URL = "http://localhost:8000"  # Descomenta para pruebas locales
+DATA_PATH = os.path.join("data", "amazon_reviews_with_features.csv")
 
 # Función para verificar la API
 def check_api():
@@ -30,6 +33,25 @@ def check_api():
         return False, None
     except:
         return False, None
+
+# Función para cargar datos reales
+@st.cache_data
+def load_data():
+    """
+    Carga el dataset con características extraídas.
+    Usa cache para evitar recargar en cada interacción.
+
+    Returns:
+        DataFrame o None si no existe el archivo
+    """
+    if os.path.exists(DATA_PATH):
+        try:
+            df = pd.read_csv(DATA_PATH)
+            return df
+        except Exception as e:
+            st.error(f"Error al cargar datos: {e}")
+            return None
+    return None
 
 # Header principal
 st.title("🔍 Asistente de Análisis de Reseñas")
@@ -83,122 +105,156 @@ tab1, tab2 = st.tabs(["📊 Análisis Exploratorio (EDA)", "🤖 Predicción de 
 with tab1:
     st.header("📈 Análisis Exploratorio de Datos")
     st.markdown("Visualiza patrones y tendencias en las reseñas analizadas")
-    
+
     st.markdown("---")
-    
-    # Sección de métricas generales
-    st.subheader("📊 Métricas Generales del Sistema")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric(
-            label="Reseñas Analizadas",
-            value="1,234",
-            delta="156 esta semana"
-        )
-    
-    with col2:
-        st.metric(
-            label="Tasa de Utilidad",
-            value="68.5%",
-            delta="2.3%"
-        )
-    
-    with col3:
-        st.metric(
-            label="Confianza Promedio",
-            value="Alta",
-            delta="Estable"
-        )
-    
-    with col4:
-        st.metric(
-            label="Palabras Promedio",
-            value="47",
-            delta="-3"
-        )
-    
-    st.markdown("---")
-    
-    # Gráficos de ejemplo
-    st.subheader("📈 Distribución de Utilidad por Score")
-    
-    # Datos de ejemplo para gráfico
-    df_scores = pd.DataFrame({
-        'Score': [1, 2, 3, 4, 5],
-        'Útiles': [45, 78, 156, 234, 312],
-        'No Útiles': [123, 98, 67, 45, 23]
-    })
-    
-    fig_scores = go.Figure()
-    fig_scores.add_trace(go.Bar(
-        name='Útiles',
-        x=df_scores['Score'],
-        y=df_scores['Útiles'],
-        marker_color='lightgreen'
-    ))
-    fig_scores.add_trace(go.Bar(
-        name='No Útiles',
-        x=df_scores['Score'],
-        y=df_scores['No Útiles'],
-        marker_color='lightcoral'
-    ))
-    
-    fig_scores.update_layout(
-        title='Distribución de Reseñas Útiles vs No Útiles por Score',
-        xaxis_title='Score (1-5)',
-        yaxis_title='Cantidad de Reseñas',
-        barmode='group',
-        height=400
-    )
-    
-    st.plotly_chart(fig_scores, use_container_width=True)
-    
-    st.markdown("---")
-    
-    # Dos columnas para más gráficos
-    col_graf1, col_graf2 = st.columns(2)
-    
-    with col_graf1:
-        st.subheader("💬 Longitud de Reseñas")
-        
-        # Datos de ejemplo
-        df_length = pd.DataFrame({
-            'Categoría': ['Muy Corta (1-20)', 'Corta (21-50)', 'Media (51-100)', 'Larga (101+)'],
-            'Cantidad': [234, 456, 389, 155],
-            'Utilidad': [45, 62, 78, 85]
-        })
-        
-        fig_length = px.bar(
-            df_length,
-            x='Categoría',
-            y='Cantidad',
-            color='Utilidad',
-            title='Distribución por Longitud de Texto',
-            color_continuous_scale='Blues',
-            text_auto=True
-        )
-        fig_length.update_layout(showlegend=False)
-        st.plotly_chart(fig_length, use_container_width=True)
-    
-    with col_graf2:
-        st.subheader("😊 Análisis de Sentimiento")
-        
-        # Datos de ejemplo
-        df_sentiment = pd.DataFrame({
-            'Sentimiento': ['Muy Negativo', 'Negativo', 'Neutral', 'Positivo', 'Muy Positivo'],
-            'Porcentaje': [8, 15, 23, 35, 19]
-        })
-        
-        fig_sentiment = px.pie(
-            df_sentiment,
-            values='Porcentaje',
-            names='Sentimiento',
-            title='Distribución de Sentimiento en Reseñas',
-            color_discrete_sequence=px.colors.sequential.RdBu
-        )
-        st.plotly_chart(fig_sentiment, use_container_width=True)
+
+    # Cargar datos reales
+    df = load_data()
+
+    if df is None or len(df) == 0:
+        st.warning("⚠️ No hay datos disponibles para mostrar")
+        st.info("""
+        **Para generar datos:**
+        1. Ejecuta el pipeline completo: `python run_pipeline.py`
+        2. Esto generará el archivo `data/amazon_reviews_with_features.csv`
+        3. Recarga esta página para ver los datos reales
+        """)
+    else:
+        # Sección de métricas generales
+        st.subheader("📊 Métricas Generales del Sistema")
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        # DATOS REALES: Calcular métricas desde el dataset
+        total_reviews = len(df)
+        utilidad_rate = df['IsHelpful'].mean() * 100 if 'IsHelpful' in df.columns else 0
+        avg_words = df['word_count'].mean() if 'word_count' in df.columns else 0
+
+        with col1:
+            st.metric(
+                label="Reseñas Analizadas",
+                value=f"{total_reviews:,}"
+            )
+
+        with col2:
+            st.metric(
+                label="Tasa de Utilidad",
+                value=f"{utilidad_rate:.1f}%"
+            )
+
+        with col3:
+            # Calcular promedio de sentimiento
+            avg_sentiment = df['vader_compound'].mean() if 'vader_compound' in df.columns else 0
+            sentiment_label = "Positivo" if avg_sentiment > 0.05 else "Negativo" if avg_sentiment < -0.05 else "Neutral"
+            st.metric(
+                label="Sentimiento Promedio",
+                value=sentiment_label,
+                delta=f"{avg_sentiment:.3f}"
+            )
+
+        with col4:
+            st.metric(
+                label="Palabras Promedio",
+                value=f"{avg_words:.0f}"
+            )
+
+        st.markdown("---")
+
+        # Gráficos con datos reales
+        st.subheader("📈 Distribución de Utilidad por Score")
+
+        # DATOS REALES: Agrupar por Score e IsHelpful
+        if 'Score' in df.columns and 'IsHelpful' in df.columns:
+            df_grouped = df.groupby(['Score', 'IsHelpful']).size().unstack(fill_value=0)
+            df_grouped.columns = ['No Útiles', 'Útiles']
+            df_grouped = df_grouped.reset_index()
+
+            fig_scores = go.Figure()
+            fig_scores.add_trace(go.Bar(
+                name='Útiles',
+                x=df_grouped['Score'],
+                y=df_grouped['Útiles'],
+                marker_color='lightgreen'
+            ))
+            fig_scores.add_trace(go.Bar(
+                name='No Útiles',
+                x=df_grouped['Score'],
+                y=df_grouped['No Útiles'],
+                marker_color='lightcoral'
+            ))
+
+            fig_scores.update_layout(
+                title='Distribución de Reseñas Útiles vs No Útiles por Score',
+                xaxis_title='Score (1-5)',
+                yaxis_title='Cantidad de Reseñas',
+                barmode='group',
+                height=400
+            )
+
+            st.plotly_chart(fig_scores, use_container_width=True)
+
+        st.markdown("---")
+
+        # Dos columnas para más gráficos
+        col_graf1, col_graf2 = st.columns(2)
+
+        with col_graf1:
+            st.subheader("💬 Longitud de Reseñas")
+
+            # DATOS REALES: Categorizar por longitud de palabras
+            if 'word_count' in df.columns and 'IsHelpful' in df.columns:
+                df_length = df.copy()
+                df_length['Categoría'] = pd.cut(
+                    df_length['word_count'],
+                    bins=[0, 20, 50, 100, float('inf')],
+                    labels=['Muy Corta (1-20)', 'Corta (21-50)', 'Media (51-100)', 'Larga (101+)']
+                )
+
+                df_length_grouped = df_length.groupby('Categoría', observed=True).agg({
+                    'word_count': 'count',
+                    'IsHelpful': 'mean'
+                }).reset_index()
+                df_length_grouped.columns = ['Categoría', 'Cantidad', 'Utilidad']
+                df_length_grouped['Utilidad'] = (df_length_grouped['Utilidad'] * 100).round(1)
+
+                fig_length = px.bar(
+                    df_length_grouped,
+                    x='Categoría',
+                    y='Cantidad',
+                    color='Utilidad',
+                    title='Distribución por Longitud de Texto',
+                    color_continuous_scale='Blues',
+                    text_auto=True
+                )
+                fig_length.update_layout(showlegend=False)
+                st.plotly_chart(fig_length, use_container_width=True)
+
+        with col_graf2:
+            st.subheader("😊 Análisis de Sentimiento")
+
+            # DATOS REALES: Categorizar por VADER compound
+            if 'vader_compound' in df.columns:
+                df_sentiment = df.copy()
+                df_sentiment['Sentimiento'] = pd.cut(
+                    df_sentiment['vader_compound'],
+                    bins=[-1, -0.5, -0.05, 0.05, 0.5, 1],
+                    labels=['Muy Negativo', 'Negativo', 'Neutral', 'Positivo', 'Muy Positivo']
+                )
+
+                sentiment_counts = df_sentiment['Sentimiento'].value_counts()
+                df_sentiment_grouped = pd.DataFrame({
+                    'Sentimiento': sentiment_counts.index,
+                    'Cantidad': sentiment_counts.values
+                })
+
+                fig_sentiment = px.pie(
+                    df_sentiment_grouped,
+                    values='Cantidad',
+                    names='Sentimiento',
+                    title='Distribución de Sentimiento en Reseñas',
+                    color_discrete_sequence=px.colors.sequential.RdBu
+                )
+                st.plotly_chart(fig_sentiment, use_container_width=True)
 
 # ==================== PESTAÑA 2: PREDICCIÓN ML ====================
 with tab2:
@@ -365,6 +421,10 @@ with tab2:
                             'vader_compound': 'Sentimiento (VADER)',
                             'textblob_polarity': 'Polaridad (TextBlob)',
                             'lexical_diversity': 'Diversidad Léxica',
+                            'flesch_reading_ease': 'Legibilidad (Flesch)',
+                            'gunning_fog': 'Complejidad (Gunning Fog)',
+                            'paragraph_count': 'Número de Párrafos',
+                            'bullet_point_count': 'Puntos de Lista',
                             'exclamation_count': 'Exclamaciones',
                             'question_count': 'Preguntas'
                         }
