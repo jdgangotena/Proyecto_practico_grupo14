@@ -174,7 +174,8 @@ st.set_page_config(
 )
 
 # Configuración
-API_URL = "http://localhost:8000"
+##API_URL = "http://localhost:8000"
+API_URL = "http://m4gk0ko4sccg8gsokco04so0.31.97.10.143.sslip.io"
 DATA_PATH = os.path.join("data", "amazon_reviews_with_features.csv")
 
 # ======================================
@@ -233,14 +234,7 @@ with st.sidebar:
         st.warning("Ejecuta el pipeline: `python run_pipeline.py`")
 
     st.markdown("---")
-    st.markdown("### 📝 Ejemplos")
-    if st.button("Reseña Útil", use_container_width=True):
-        st.session_state['example_text'] = "This coffee is excellent! The flavor is rich and smooth..."
-        st.session_state['example_score'] = 5
 
-    if st.button("Reseña Corta", use_container_width=True):
-        st.session_state['example_text'] = "Good"
-        st.session_state['example_score'] = 4
 
 # Crear pestañas principales
 tab1, tab2 = st.tabs([
