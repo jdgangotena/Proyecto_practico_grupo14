@@ -147,7 +147,7 @@ venv.bak/
 # CSV files - ignorar archivos grandes pero permitir muestras
 *.csv
 # Permitir CSV reducido para el dashboard en producción
-!data/amazon_reviews_sample_10k.csv
+!data/amazon_reviews_with_features.csv
 
 # Spyder project settings
 .spyderproject
