@@ -323,9 +323,9 @@ with tab2:
     
     # Procesar análisis cuando se presiona el botón
     if submit_button:
-        if not review_text or len(review_text.strip()) < 10:
+        if not review_text or len(review_text.strip()) < 20:
             with col_output:
-                st.warning("⚠️ Escribe al menos 10 caracteres para analizar la reseña")
+                st.warning("⚠️ Escribe al menos 20 caracteres para analizar la reseña")
         elif not api_connected:
             with col_output:
                 st.error("❌ No se puede conectar a la API. Asegúrate de que esté ejecutándose.")

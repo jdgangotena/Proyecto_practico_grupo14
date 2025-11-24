@@ -27,7 +27,7 @@ def print_step(step_num, total_steps, description):
     print("-" * 70)
 
 
-def run_pipeline(nrows=50000, skip_training=False):
+def run_pipeline(nrows=None, skip_training=False):
     """
     Ejecuta el pipeline completo.
 
@@ -202,8 +202,8 @@ def main():
     parser.add_argument(
         '--nrows',
         type=int,
-        default=50000,
-        help='Número de filas a procesar (default: 50000, use 0 para todo el dataset)'
+        default=0,
+        help='Número de filas a procesar (default: ..., use 0 para todo el dataset)'
     )
     parser.add_argument(
         '--skip-training',

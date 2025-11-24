@@ -192,27 +192,20 @@ def generar_sugerencias(features: Dict[str, float], probability: float) -> List[
 
 def clasificar_confianza(probability: float) -> str:
     """
-    Clasifica el nivel de confianza de la predicción.
-
-    Lógica: Alta confianza cuando la probabilidad está cerca de los extremos (0 o 1),
-    baja confianza cuando está cerca de 0.5 (indecisión).
-
-    Args:
-        probability: Probabilidad predicha (0-1)
-
-    Returns:
-        Nivel de confianza: 'high', 'medium', 'low'
-        - high: prob >= 0.7 OR prob <= 0.3 (predicción clara)
-        - medium: prob >= 0.55 OR prob <= 0.45 (predicción moderada)
-        - low: prob entre 0.45 y 0.55 (indecisión)
+    Clasifica el nivel de confianza basado en qué tan lejos está la probabilidad del punto de decisión (0.5).
+   
+    - Alta confianza: probabilidad muy lejos de 0.5 (>= 0.25)
+    - Media confianza: probabilidad moderadamente lejos (>= 0.10)
+    - Baja confianza: probabilidad muy cercana a 0.5
     """
-    if probability >= 0.7 or probability <= 0.3:
-        return "high"
-    elif probability >= 0.55 or probability <= 0.45:
-        return "medium"
+    distancia = abs(probability - 0.0)
+ 
+    if distancia >= 0.25:
+        return "high"      # Muy seguro
+    elif distancia >= 0.10:
+        return "medium"    # Moderada seguridad
     else:
-        return "low"
-
+        return "low"       # Muy inseguro
 
 def traducir_texto(text: str) -> str:
     """
