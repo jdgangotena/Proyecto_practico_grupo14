@@ -176,18 +176,62 @@ st.set_page_config(
 # Configuración
 ##API_URL = "http://localhost:8000"
 API_URL = "http://m4gk0ko4sccg8gsokco04so0.31.97.10.143.sslip.io"
-# Usar CSV reducido (10k muestras) para deployment - archivo más liviano
+
+# Google Drive configuration
+GDRIVE_FILE_ID = "183FP3bFwrh_r2m6gChhWH6daQQLYTKuv"
 DATA_PATH = os.path.join("data", "amazon_reviews_sample_10k.csv")
 
 # ======================================
-# CARGA DE DATA REAL
+# CARGA DE DATA DESDE GOOGLE DRIVE
 # ======================================
+
+def download_from_gdrive(file_id, destination):
+    """
+    Descarga un archivo desde Google Drive usando su ID.
+    """
+    try:
+        # URL de descarga directa de Google Drive
+        download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+
+        # Crear directorio si no existe
+        os.makedirs(os.path.dirname(destination), exist_ok=True)
+
+        # Descargar archivo
+        response = requests.get(download_url, stream=True)
+
+        # Verificar si es una respuesta exitosa
+        if response.status_code == 200:
+            with open(destination, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+            return True
+        else:
+            st.error(f"Error al descargar: Status code {response.status_code}")
+            return False
+    except Exception as e:
+        st.error(f"Error al descargar archivo desde Google Drive: {str(e)}")
+        return False
 
 @st.cache_data
 def load_data():
-    if os.path.exists(DATA_PATH):
+    """
+    Carga el dataset desde Google Drive si no existe localmente.
+    """
+    # Si el archivo no existe localmente, descargarlo desde Google Drive
+    if not os.path.exists(DATA_PATH):
+        st.info("📥 Descargando dataset desde Google Drive...")
+        if not download_from_gdrive(GDRIVE_FILE_ID, DATA_PATH):
+            st.error("No se pudo descargar el archivo desde Google Drive")
+            return None
+        st.success("✅ Dataset descargado exitosamente")
+
+    # Cargar el CSV
+    try:
         return pd.read_csv(DATA_PATH)
-    return None
+    except Exception as e:
+        st.error(f"Error al cargar el CSV: {str(e)}")
+        return None
 
 df = load_data()
 
