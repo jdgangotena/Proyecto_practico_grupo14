@@ -176,7 +176,8 @@ st.set_page_config(
 # Configuración
 ##API_URL = "http://localhost:8000"
 API_URL = "http://m4gk0ko4sccg8gsokco04so0.31.97.10.143.sslip.io"
-DATA_PATH = os.path.join("data", "amazon_reviews_with_features.csv")
+# Usar CSV reducido (10k muestras) para deployment - archivo más liviano
+DATA_PATH = os.path.join("data", "amazon_reviews_sample_10k.csv")
 
 # ======================================
 # CARGA DE DATA REAL
